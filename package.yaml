@@ -1,0 +1,38 @@
+library:
+  source-dirs: src
+copyright: Alexey Pronin
+maintainer: a@vuln.be
+dependencies:
+- mtl
+- time
+- filepath
+- bytestring
+- text
+- case-insensitive
+- aeson
+- aeson-pretty
+- http-types
+- http-client
+- http-client-tls
+- http-conduit
+- either
+- unordered-containers
+- base >= 4.7 && < 5
+name: harborsecv
+version: 0.1.0.0
+extra-source-files:
+- README.md
+- ChangeLog.md
+author: Alexey Pronin
+github: vulnbe/harborsecv
+executables:
+  harborsecv:
+    source-dirs: app
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - harborsecv
+description: Please see the README on GitHub at <https://github.com/vulnbe/harborsecv#readme>
