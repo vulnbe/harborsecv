@@ -3,36 +3,38 @@ module HarborSecV.CmdOptions
       getOptions
     ) where
 
-import System.Environment
-import GHC.IO.Handle.Text (hPutStrLn, hPutStr)
-import GHC.IO.Handle.FD (stderr)
-import System.Exit
+import           GHC.IO.Handle.FD      (stderr)
+import           GHC.IO.Handle.Text    (hPutStr, hPutStrLn)
+import           System.Environment    (getArgs)
+import           System.Exit           (exitFailure, exitSuccess)
 
-import System.Console.GetOpt
-import Control.Monad.Except
-import Data.Either
-import Data.Maybe
-import Control.Monad
+import           Control.Monad         (unless, when)
+import           Control.Monad.Except  (Except, MonadError (throwError),
+                                        runExcept, unless, when)
+import           Data.Either           ()
+import           Data.Maybe            (isNothing)
+import           System.Console.GetOpt
 
 data CmdOptions = CmdOptions
-  { optVerbose     :: Bool
-  , optShowHelp    :: Bool
-  , optEndpoint    :: Maybe String
-  , optUser        :: Maybe String
-  , optPassword    :: Maybe String
-  , optProjectIDs  :: [Int]
-  , optOutput      :: Maybe FilePath
-  , optThreads     :: Int
-  , optSeverity    :: Int
+  { optVerbose    :: Bool
+  , optShowHelp   :: Bool
+  , optEndpoint   :: Maybe String
+  , optUser       :: Maybe String
+  , optPassword   :: Maybe String
+  , optProjectIDs :: [Int]
+  , optOutput     :: Maybe FilePath
+  , optThreads    :: Int
+  , optSeverity   :: Int
   } deriving Show
 
+defaultCmdOptions :: CmdOptions
 defaultCmdOptions = CmdOptions
   { optVerbose     = False
   , optShowHelp    = False
   , optThreads     = 10
   , optProjectIDs  = []
   , optOutput      = Nothing
-  , optUser        = Nothing 
+  , optUser        = Nothing
   , optPassword    = Nothing
   , optEndpoint    = Nothing
   , optSeverity    = 1
@@ -66,7 +68,7 @@ options =
   , Option []        ["threads"]
       (ReqArg (\o opts -> case reads o of
           [(v, "")] -> return opts { optThreads = v}
-          _  -> throwError "Unable to parse threads number\n") "THREADS_NUM")
+          _         -> throwError "Unable to parse threads number\n") "THREADS_NUM")
       "threads number to use, e.g --threads 15"
   , Option ['s']     ["severity"]
       (ReqArg (\o opts -> case reads o of
@@ -86,10 +88,11 @@ getOptions = do
         when (isNothing $ optEndpoint opts) (showUsageErr "Endpoint field is required")
         when (isNothing $ optUser opts) (showUsageErr "User field is required")
         when (isNothing $ optPassword opts) (showUsageErr "Password field is required")
-        when (null $ optProjectIDs opts) (showUsageErr "At least one project id must be specified") 
+        when (null $ optProjectIDs opts) (showUsageErr "At least one project id must be specified")
         return (opts, n)
     (Left err) -> showUsageErr err
 
+showUsageErr :: String -> IO b
 showUsageErr err = do
   hPutStrLn stderr err
   showHelp

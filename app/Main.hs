@@ -1,35 +1,37 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 
 module Main where
 
-import HarborSecV.CmdOptions
-import HarborSecV.Models
-import Data.Aeson
-import Data.Aeson.Types
-import Data.Aeson.Encode.Pretty (encodePretty)
-import Network.HTTP.Client (path, HttpExceptionContent(..))
-import Network.HTTP.Client.TLS
-import Network.HTTP.Simple
-import Network.HTTP.Types (urlEncode)
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Char8 as C
+import           Control.Concurrent
+import           Control.Concurrent.Chan
+import           Control.Exception          (throw, try)
+import           Control.Monad              (forM_, forever, guard, replicateM,
+                                             replicateM_, when)
+import           Control.Monad.Except
+import           Control.Monad.Reader
+import           Data.Aeson                 (FromJSON, eitherDecode, encode)
+import           Data.Aeson.Encode.Pretty   (encodePretty)
+import           Data.Aeson.Types           (FromJSON)
+import qualified Data.ByteString.Char8      as C
+import qualified Data.ByteString.Lazy       as BL
 import qualified Data.ByteString.Lazy.Char8 as CL
-import Text.Read (readEither)
-import Data.List
-import Data.Time (UTCTime)
-import Data.Time.Clock (getCurrentTime)
-import Data.Function ((&))
-import Data.Foldable (traverse_)
-import Data.Either.Combinators ( maybeToRight )
-import Control.Concurrent
-import Control.Concurrent.Chan
-import System.FilePath ((</>))
-import System.IO (openFile, stdout, IOMode(..), hPutStr)
-import Control.Exception
-import Control.Monad (guard, when, forever, forM_, replicateM_, replicateM)
-import Control.Monad.Except
-import Control.Monad.Reader
+import           Data.Either.Combinators    (maybeToRight)
+import           Data.Foldable              (traverse_)
+import           Data.Function              ((&))
+import           Data.List                  (find, sortBy)
+import           Data.Time                  (UTCTime)
+import           Data.Time.Clock            (getCurrentTime)
+import           HarborSecV.CmdOptions
+import           HarborSecV.Models
+import           Network.HTTP.Client        (HttpExceptionContent (..), path)
+import           Network.HTTP.Client.TLS    (newTlsManager)
+import           Network.HTTP.Simple
+import           Network.HTTP.Types         (urlEncode)
+import           System.FilePath            ((</>))
+import           System.IO                  (IOMode (..), hPutStr, openFile,
+                                             stdout)
+import           Text.Read                  (readEither)
 
 type Application m = ReaderT AppEnv (ExceptT HarborSecVException m)
 

@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module HarborSecV.Models
     ( Repository (..),
@@ -18,59 +18,61 @@ module HarborSecV.Models
       TimeStamp
     ) where
 
-import HarborSecV.CmdOptions
-import Data.Aeson.Types
-import Data.Time
-import Data.Time.Format.ISO8601
-import Data.List (find)
-import Data.Maybe (isJust)
-import GHC.Generics
-import Control.Exception
-import Network.HTTP.Simple
-import Network.HTTP.Client (HttpExceptionContent(..), method, path, host, queryString, requestHeaders)
-import System.IO (Handle)
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Data.ByteString as B
-import qualified Data.HashMap.Lazy as HML
-import Data.CaseInsensitive (original)
-import qualified Data.HashMap.Strict as HM
+import           Control.Exception        (Exception)
+import           Data.Aeson.Types
+import qualified Data.ByteString          as B
+import qualified Data.ByteString.Lazy     as BL
+import           Data.CaseInsensitive     (original)
+import qualified Data.HashMap.Lazy        as HML
+import qualified Data.HashMap.Strict      as HM
+import           Data.List                (find)
+import           Data.Maybe               (isJust)
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding       as TE
+import           Data.Time                (LocalTime, UTCTime,
+                                           ZonedTime (zonedTimeToLocalTime))
+import           Data.Time.Format.ISO8601 (iso8601Show)
+import           GHC.Generics             (Generic)
+import           HarborSecV.CmdOptions    (CmdOptions)
+import           Network.HTTP.Client
+import           Network.HTTP.Simple      (HttpException (..), Request)
+import           System.IO                (Handle)
 
 data Repository
   = Repository {
-    repositoryName :: String,
+    repositoryName      :: String,
     repositoryTagsCount :: Int
   } deriving (Show, Generic)
 
 data Tag
   = Tag {
-    tagName :: String,
+    tagName    :: String,
     tagCreated :: LocalTime
   } deriving (Show, Generic)
 
 data Image
-  = Image { imageTag :: Tag,
+  = Image {
+    imageTag        :: Tag,
     imageRepository :: Repository,
-    imageCVEs :: [CVE]
+    imageCVEs       :: [CVE]
   } deriving (Show, Generic)
 
 data CVE
   = CVE {
-    cveID :: String,
-    cveSeverity :: Maybe Int,
-    cvePackage :: Maybe String,
-    cveVersion :: Maybe String,
+    cveID          :: String,
+    cveSeverity    :: Maybe Int,
+    cvePackage     :: Maybe String,
+    cveVersion     :: Maybe String,
     cveDescription :: Maybe String,
-    cveLink :: Maybe String
+    cveLink        :: Maybe String
   } deriving (Show, Generic)
 
 data Vulnerability
   = Vulnerability {
-    vulnCVE :: CVE,
+    vulnCVE        :: CVE,
     vulnRepository :: Repository,
-    vulnTag :: Tag,
-    vulnTimestamp :: UTCTime
+    vulnTag        :: Tag,
+    vulnTimestamp  :: UTCTime
   } deriving (Show, Generic)
 
 data HarborSecVException
@@ -92,10 +94,10 @@ instance Exception HarborSecVException
 data AppEnv
   = AppEnv {
     envBaseRequest :: Request,
-    envTimestamp :: UTCTime,
-    envOutput :: Handle,
-    envSerialize :: LogEntry -> BL.ByteString,
-    cmdOptions :: CmdOptions
+    envTimestamp   :: UTCTime,
+    envOutput      :: Handle,
+    envSerialize   :: LogEntry -> BL.ByteString,
+    cmdOptions     :: CmdOptions
   }
 
 data LogEntry
@@ -135,11 +137,11 @@ instance ToJSON Request where
 
 bsToText :: B.ByteString -> T.Text
 bsToText bs = case TE.decodeUtf8' bs of
-  (Left _) -> T.pack $ show bs
+  (Left _)  -> T.pack $ show bs
   (Right v) -> v
 
 instance ToJSON LogEntry where
-  toJSON (LogResult r) = toJSON r
+  toJSON (LogResult r)    = toJSON r
   toJSON (LogException e) = toJSON e
 
 instance ToJSON HarborSecVException where
